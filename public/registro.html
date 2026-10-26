@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Registro - Feria de Emprendimientos</title>
+  <link rel="stylesheet" href="estilos.css">
+  <style>
+    .campo-expositor { display: none; } /* Oculto por defecto hasta elegir Expositor */
+  </style>
+</head>
+<body>
+  <div class="card" style="max-width: 500px; margin: 40px auto; padding: 20px;">
+    <h2>Crear Cuenta</h2>
+    <div id="alerta" class="alert" style="display:none;"></div>
+
+    <form id="form-registro">
+      <div>
+        <label>Tipo de Usuario:</label>
+        <select id="reg-rol" required style="width:100%; padding:8px; margin-bottom:12px;">
+          <option value="cliente">Cliente (Visitante)</option>
+          <option value="expositor">Expositor (Emprendimiento)</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Nombre Completo:</label>
+        <input type="text" id="reg-nombre" required style="width:100%; padding:8px; margin-bottom:12px;">
+      </div>
+
+      <div>
+        <label>Correo Electrónico:</label>
+        <input type="email" id="reg-correo" required style="width:100%; padding:8px; margin-bottom:12px;">
+      </div>
+
+      <div>
+        <label>Contraseña:</label>
+        <input type="password" id="reg-password" required style="width:100%; padding:8px; margin-bottom:12px;">
+      </div>
+
+      <!-- Campos exclusivos para Expositores -->
+      <div class="campo-expositor">
+        <label>Nombre del Emprendimiento:</label>
+        <input type="text" id="reg-emprendimiento" style="width:100%; padding:8px; margin-bottom:12px;">
+      </div>
+
+      <div class="campo-expositor">
+        <label>Categoría:</label>
+        <select id="reg-categoria" style="width:100%; padding:8px; margin-bottom:12px;">
+          <option value="">-- Selecciona Categoría --</option>
+          <option value="Artesanías">Artesanías</option>
+          <option value="Gastronomía">Gastronomía</option>
+          <option value="Tecnología">Tecnología</option>
+          <option value="Moda">Moda</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-aval" style="width:100%; padding:10px;">Registrarse</button>
+    </form>
+    
+    <p style="text-align:center; margin-top:15px;">
+      <a href="/login.html">¿Ya tienes cuenta? Inicia sesión aquí</a>
+    </p>
+  </div>
+
+  <script src="registro.js"></script>
+</body>
+</html>
