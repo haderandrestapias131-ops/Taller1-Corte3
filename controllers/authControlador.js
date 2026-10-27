@@ -2,7 +2,7 @@ const { cliente_supabase } = require('../config/supabase');
 
 const authControlador = {
   /**
-   * Inicia sesión para cualquier rol (Administrador, Expositor o Cliente)
+   * Inicia sesión para cualquier rol (Administrador o Expositor)
    */
   iniciarSesion: async function (solicitud, respuesta) {
     try {
@@ -65,20 +65,20 @@ const authControlador = {
   },
 
   /**
-   * Registra un nuevo usuario permitiendo elegir su rol ('cliente' o 'expositor')
+   * Registra EXCLUSIVAMENTE nuevos Expositores / Emprendimientos
    */
   registrarUsuario: async function (solicitud, respuesta) {
     try {
-      const { rol, nombre, correo, password, nombre_emprendimiento, categoria } = solicitud.body;
+      const { nombre, correo, password, nombre_emprendimiento, categoria } = solicitud.body;
 
-      if (!correo || !password || !nombre || !rol) {
+      if (!correo || !password || !nombre || !nombre_emprendimiento || !categoria) {
         return respuesta.status(400).json({
           estado: 'error',
-          mensaje: 'Todos los campos básicos son obligatorios.'
+          mensaje: 'Todos los campos del emprendimiento son obligatorios.'
         });
       }
 
-      // 1. Crear usuario en Supabase Auth
+      // 1. Crear cuenta en Supabase Auth
       const { data: authData, error: authError } = await cliente_supabase.auth.signUp({
         email: correo,
         password: password
@@ -87,45 +87,40 @@ const authControlador = {
       if (authError) {
         return respuesta.status(400).json({
           estado: 'error',
-          mensaje: 'Error al registrar usuario: ' + authError.message
+          mensaje: 'Error al registrar la cuenta: ' + authError.message
         });
       }
 
       const id_usuario = authData.user.id;
-      let id_expositor = null;
 
-      // 2. Si eligió 'expositor', crear la entrada con estado 'pendiente'
-      if (rol === 'expositor') {
-        const { data: expositorData, error: expositorError } = await cliente_supabase
-          .from('expositores')
-          .insert([{
-            nombre,
-            correo,
-            nombre_emprendimiento: nombre_emprendimiento || 'Emprendimiento de ' + nombre,
-            categoria: categoria || 'General',
-            estado: 'pendiente' // <--- Requiere aval del Administrador
-          }])
-          .select()
-          .single();
+      // 2. Registrar el emprendimiento en la tabla 'expositores' en estado 'pendiente'
+      const { data: expositorData, error: expositorError } = await cliente_supabase
+        .from('expositores')
+        .insert([{
+          nombre,
+          correo,
+          nombre_emprendimiento,
+          categoria,
+          estado: 'pendiente' // Requiere aprobación del Administrador
+        }])
+        .select()
+        .single();
 
-        if (expositorError) {
-          return respuesta.status(400).json({
-            estado: 'error',
-            mensaje: 'Error al registrar el emprendimiento: ' + expositorError.message
-          });
-        }
-
-        id_expositor = expositorData.id;
+      if (expositorError) {
+        return respuesta.status(400).json({
+          estado: 'error',
+          mensaje: 'Error al registrar el emprendimiento: ' + expositorError.message
+        });
       }
 
-      // 3. Crear el perfil asociando el usuario
+      // 3. Crear el perfil con rol 'expositor' asociado
       const { error: perfilError } = await cliente_supabase
         .from('perfiles')
         .insert([{
           id_usuario: id_usuario,
           nombre: nombre,
-          rol: rol,
-          id_expositor: id_expositor
+          rol: 'expositor', // Asignación fija como expositor
+          id_expositor: expositorData.id
         }]);
 
       if (perfilError) {
@@ -137,7 +132,7 @@ const authControlador = {
 
       respuesta.status(201).json({
         estado: 'exitoso',
-        mensaje: 'Registro completado correctamente.'
+        mensaje: 'Solicitud de registro enviada con éxito. Pendiente de aprobación.'
       });
 
     } catch (error) {
