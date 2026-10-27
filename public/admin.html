@@ -4,6 +4,25 @@
   <meta charset="UTF-8">
   <title>Panel de Administración</title>
   <link rel="stylesheet" href="estilos.css">
+  <style>
+    /* Estilos del Modal de Edición */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      justify-content: center; align-items: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 32px; width: 100%; max-width: 480px;
+      box-shadow: var(--shadow-card);
+    }
+  </style>
 </head>
 <body>
 
@@ -46,7 +65,49 @@
     </div>
   </div>
 
+  <!-- MODAL PARA EDITAR EXPOSITOR -->
+  <div id="modal-editar" class="modal">
+    <div class="modal-content">
+      <h3 style="font-size: 1.2rem; margin-bottom: 20px;">Editar Información de Emprendimiento</h3>
+      <form id="form-editar-expositor" style="display: flex; flex-direction: column; gap: 16px;">
+        <input type="hidden" id="edit-id">
+        
+        <div class="form-group">
+          <label>Nombre del Expositor</label>
+          <input type="text" id="edit-nombre" required>
+        </div>
+
+        <div class="form-group">
+          <label>Correo Electrónico</label>
+          <input type="email" id="edit-correo" required>
+        </div>
+
+        <div class="form-group">
+          <label>Nombre del Emprendimiento</label>
+          <input type="text" id="edit-emprendimiento" required>
+        </div>
+
+        <div class="form-group">
+          <label>Categoría</label>
+          <select id="edit-categoria" required>
+            <option value="Artesanías">Artesanías</option>
+            <option value="Gastronomía">Gastronomía</option>
+            <option value="Tecnología">Tecnología</option>
+            <option value="Moda">Moda</option>
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 10px; justify-content: flex-end;">
+          <button type="button" class="btn btn-ghost" onclick="cerrarModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
+    let expositoresData = [];
+
     document.addEventListener('DOMContentLoaded', cargarExpositores);
 
     function mostrarAlerta(mensaje, esError = false) {
@@ -64,15 +125,16 @@
 
         if (resultado.estado !== 'exitoso') throw new Error(resultado.mensaje);
 
+        expositoresData = resultado.datos;
         const tabla = document.getElementById('tabla-expositores');
         tabla.innerHTML = '';
 
-        if (resultado.datos.length === 0) {
+        if (expositoresData.length === 0) {
           tabla.innerHTML = '<tr><td colspan="7" style="text-align: center;">No hay registros actualmente.</td></tr>';
           return;
         }
 
-        resultado.datos.forEach(exp => {
+        expositoresData.forEach(exp => {
           const fila = document.createElement('tr');
           fila.innerHTML = `
             <td>#${exp.id}</td>
@@ -81,12 +143,13 @@
             <td>${exp.correo}</td>
             <td><span style="color: var(--accent); font-weight:600;">${exp.categoria}</span></td>
             <td><span class="status status-${exp.estado}">${exp.estado}</span></td>
-            <td style="text-align: right;">
+            <td style="text-align: right; display: flex; gap: 6px; justify-content: flex-end;">
               ${exp.estado === 'pendiente' ? `
                 <button class="btn btn-aval" onclick="cambiarEstado(${exp.id}, 'aprobado', '${exp.categoria}')">Avalar</button>
                 <button class="btn btn-rechazar" onclick="cambiarEstado(${exp.id}, 'rechazado', '${exp.categoria}')">Rechazar</button>
               ` : ''}
-              <button class="btn btn-ghost" onclick="eliminarExpositor(${exp.id})">Eliminar</button>
+              <button class="btn btn-ghost" onclick="abrirModalEditar(${exp.id})">Editar</button>
+              <button class="btn btn-ghost" style="color: var(--danger);" onclick="eliminarExpositor(${exp.id})">Eliminar</button>
             </td>
           `;
           tabla.appendChild(fila);
@@ -96,6 +159,54 @@
         mostrarAlerta('Error al cargar datos: ' + error.message, true);
       }
     }
+
+    // Modal & Edición
+    function abrirModalEditar(id) {
+      const exp = expositoresData.find(e => e.id === id);
+      if (!exp) return;
+
+      document.getElementById('edit-id').value = exp.id;
+      document.getElementById('edit-nombre').value = exp.nombre;
+      document.getElementById('edit-correo').value = exp.correo;
+      document.getElementById('edit-emprendimiento').value = exp.nombre_emprendimiento;
+      document.getElementById('edit-categoria').value = exp.categoria;
+
+      document.getElementById('modal-editar').style.display = 'flex';
+    }
+
+    function cerrarModal() {
+      document.getElementById('modal-editar').style.display = 'none';
+    }
+
+    document.getElementById('form-editar-expositor').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('edit-id').value;
+      const datos = {
+        nombre: document.getElementById('edit-nombre').value,
+        correo: document.getElementById('edit-correo').value,
+        nombre_emprendimiento: document.getElementById('edit-emprendimiento').value,
+        categoria: document.getElementById('edit-categoria').value
+      };
+
+      try {
+        const respuesta = await fetch(`/feria/actualizar/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(datos)
+        });
+
+        const resultado = await respuesta.json();
+        if (respuesta.ok && resultado.estado === 'exitoso') {
+          mostrarAlerta('Emprendimiento actualizado correctamente');
+          cerrarModal();
+          cargarExpositores();
+        } else {
+          throw new Error(resultado.mensaje);
+        }
+      } catch (error) {
+        mostrarAlerta(error.message, true);
+      }
+    });
 
     async function cambiarEstado(id, nuevoEstado, categoria) {
       try {

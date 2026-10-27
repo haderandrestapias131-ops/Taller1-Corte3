@@ -70,7 +70,17 @@ const expositorControlador = {
     } catch (error) {
       respuesta.status(400).json({ estado: 'error', mensaje: error.message });
     }
+  },
+  editar: async function(solicitud, respuesta) {
+  try {
+    const { id } = solicitud.params;
+    const datos = solicitud.body;
+    const resultado = await expositorServicio.editarExpositor(id, datos);
+    respuesta.status(200).json({ estado: 'exitoso', mensaje: 'Emprendimiento actualizado', datos: resultado });
+  } catch (error) {
+    respuesta.status(400).json({ estado: 'error', mensaje: error.message });
   }
+}
   
 };
 

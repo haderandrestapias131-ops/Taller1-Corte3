@@ -16,5 +16,7 @@ router.post('/registrar', controlador.registrar);
 router.get('/listar-todos', controlador.obtenerTodos);
 router.patch('/cambiar-estado/:id', controlador.cambiarEstado);
 router.delete('/eliminar/:id', controlador.eliminar);
+// En routes/expositorRutas.js
+router.put('/actualizar/:id', controlador.editar);
 
 module.exports = router;
