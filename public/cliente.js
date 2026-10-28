@@ -31,9 +31,9 @@ async function cargarProductosPublicos() {
       card.innerHTML = `
         <img src="${prod.imagen_url || 'https://via.placeholder.com/300x180?text=Sin+Imagen'}" alt="${prod.nombre}">
         <div class="card-body">
-          <span class="emprendimiento-tag">${categoria} | ${nombreEmprendimiento}</span>
+          <span class="emprendimiento-tag" style="color:#c9b28a;">${categoria} | ${nombreEmprendimiento}</span>
           <h3 style="font-size:1.1rem; margin-bottom:5px;">${prod.nombre}</h3>
-          <p style="color:#64748b; font-size:0.9rem; flex-grow:1; margin-bottom:10px;">${prod.descripcion || 'Sin descripción'}</p>
+          <p style="color:#e8e2d8; font-size:0.9rem; flex-grow:1; margin-bottom:10px;">${prod.descripcion || 'Sin descripción'}</p>
           <span style="font-size:1.2rem; font-weight:bold; color:#16a34a;">$${parseFloat(prod.precio).toFixed(2)}</span>
         </div>
       `;
